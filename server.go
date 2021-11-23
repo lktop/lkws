@@ -7,30 +7,30 @@ import (
 )
 
 // WsClient 定义一个websocket连接对象，连接中包含每个连接的信息
-type wsClient struct {
+type WsClient struct {
 	conn *websocket.Conn
 	msg  chan string
 }
 
 
 // WsServer 定义一个websocket处理器，用于收集消息和广播消息
-type wsServer struct {
+type WsServer struct {
 	//连接客户端列表
-	clientList map[*wsClient]bool
+	clientList map[*WsClient]bool
 	//注册chan，用户注册时添加到chan中
-	register chan *wsClient
+	register chan *WsClient
 	//注销chan，用户退出时添加到chan中，再从map中删除
-	unregister chan *wsClient
+	unregister chan *WsClient
 	//广播消息，将消息广播给所有连接
 	broadcast chan string
 }
 
 
-func (ws *wsServer)BroadCastMsg(data string){
+func (ws *WsServer)BroadCastMsg(data string){
 	ws.broadcast <- data
 }
 
-func (ws *wsServer) run() {
+func (ws *WsServer) run() {
 	for {
 		select {
 		//从注册chan中取数据
@@ -57,7 +57,7 @@ func (ws *wsServer) run() {
 }
 
 
-func (cli *wsClient)read(server *wsServer) {
+func (cli *WsClient)read(server *WsServer) {
 	//从连接中循环读取信息
 	for {
 		_, msg, err := cli.conn.ReadMessage()
@@ -71,7 +71,7 @@ func (cli *wsClient)read(server *wsServer) {
 }
 
 
-func (cli *wsClient)write() {
+func (cli *WsClient)write() {
 	for data := range cli.msg {
 		err := cli.conn.WriteMessage(1, []byte(data))
 		if err != nil {
@@ -82,17 +82,17 @@ func (cli *wsClient)write() {
 }
 
 
-func NewWsServer()*wsServer{
-	return &wsServer{
-		clientList: make(map[*wsClient]bool),
-		register:   make(chan *wsClient),
-		unregister: make(chan *wsClient),
+func NewWsServer()*WsServer{
+	return &WsServer{
+		clientList: make(map[*WsClient]bool),
+		register:   make(chan *WsClient),
+		unregister: make(chan *WsClient),
 		broadcast:  make(chan string),
 	}
 }
 
 
-func (ws *wsServer)StartServer(addr string,path string){
+func (ws *WsServer)StartServer(addr string,path string){
 	//后台启动处理器
 	go ws.run()
 
@@ -125,7 +125,7 @@ func (ws *wsServer)StartServer(addr string,path string){
 			return
 		}
 		//连接成功后注册用户
-		client := &wsClient{
+		client := &WsClient{
 			conn: conn,
 			msg:  make(chan string),
 		}
