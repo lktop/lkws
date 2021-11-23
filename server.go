@@ -48,6 +48,7 @@ func (ws *WsServer) run() {
 				select {
 				case cli.msg <- data:
 				default:
+					fmt.Println("移除客户端:",cli.conn.RemoteAddr().String())
 					delete(ws.clientList, cli)
 					close(cli.msg)
 				}
@@ -127,7 +128,7 @@ func (ws *WsServer)StartServer(addr string,path string){
 		//连接成功后注册用户
 		client := &WsClient{
 			conn: conn,
-			msg:  make(chan string),
+			msg:  make(chan string,50),
 		}
 		ws.register <- client
 		fmt.Println(conn.RemoteAddr().String()+" ---> 上线！")
